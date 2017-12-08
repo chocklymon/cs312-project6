@@ -471,23 +471,125 @@ namespace TSP
         /// finds the greedy tour starting from each city and keeps the best (valid) one
         /// </summary>
         /// <returns>results array for GUI that contains three ints: cost of solution, time spent to find solution, number of solutions found during search (not counting initial BSSF estimate)</returns>
-        public string[] greedySolveProblem()
+         public string[] greedySolveProblem()
         {
             string[] results = new string[3];
             Stopwatch timer = new Stopwatch();
-
-            // Run the greedy solver
             timer.Start();
-            GreedySolver gs = new GreedySolver(Cities);
-            bssf = gs.Solution();
-            timer.Stop();
+            //Obtain a BSSF by using a GREEDY approach.
+            List<ArrayList> routes = GenerateGreddyRoutes();
+            bssf = new TSPSolution(BestRoute(routes));
 
-            results[COST] = costOfBssf().ToString();
+            timer.Stop();
+            results[COST] = bssf.costOfRoute().ToString();
             results[TIME] = timer.Elapsed.ToString();
-            results[COUNT] = gs.BacktrackCount().ToString();
+            results[COUNT] = "";
 
             return results;
         }
+
+        public List<ArrayList> GenerateGreddyRoutes()
+        {
+            List<ArrayList> routes = new List<ArrayList>();
+            int cityCount = Cities.Length;
+            bool routeCreated = false;
+
+            for(int i = 0; i < cityCount; i++)
+            {
+                //For each city
+                ArrayList route = new ArrayList();
+                routeCreated = GenerateRoute(route, i);
+                if (routeCreated)
+                {
+                    routes.Add(route);
+                }
+            }  
+            return routes; 
+        }
+
+        public bool GenerateRoute(ArrayList route, int startCity)
+        {
+            List<int> remainingCities = new List<int>();
+            City currentCity = Cities[startCity];
+            route.Add(currentCity);
+
+            //Make a queue to help keep track of remaining cities
+            //Remember to not add city 0
+            int cityCount = Cities.Length;
+            for (int i = 0; i < cityCount; i++)
+            {
+                if (i != startCity)
+                {
+                    remainingCities.Add(i);
+                }
+            }
+
+            //Initialixe helper variables
+            City neighborCity = null;
+            int neighborCityIndex = 0;
+            double neighborCost = Double.PositiveInfinity;
+            double cost = 0;
+
+            while (remainingCities.Count != 0)
+            {
+                //For each remaining city
+                int size = remainingCities.Count;
+                for (int i = 0; i < size; i++)
+                {
+                    int remainingCity = remainingCities[i];
+                    cost = currentCity.costToGetTo(Cities[remainingCity]);
+                    if (cost < neighborCost)
+                    {
+                        neighborCity = Cities[remainingCity];
+                        neighborCost = cost;
+                        neighborCityIndex = remainingCity;
+                    }
+                }
+
+                //If the cost from the one city to the next comes out to be infinite then this route failed, and we have to start over.
+                if (cost == Double.PositiveInfinity)
+                {
+                    return false;
+                }
+
+                //As it ends, we will have the closest neighbor to the current city
+                route.Add(neighborCity);
+                remainingCities.Remove(neighborCityIndex);
+                currentCity = neighborCity;
+                neighborCost = Double.PositiveInfinity;
+            }
+
+            //Verify that the last city in the route can make it back to the first
+            City lastCity = (City)route[route.Count - 1];
+            City beginCity = Cities[startCity];
+            if (lastCity.costToGetTo(beginCity) == Double.PositiveInfinity)
+            {
+                return false;
+            }
+
+            //If we make it through, we found a route
+            return true;
+        }
+
+        public ArrayList BestRoute(List<ArrayList> routes)
+        {
+            int routeCount = routes.Count;
+            double bestCostSoFar = Double.PositiveInfinity;
+            int BCSFIndex = 0;
+
+            for (int i = 0; i < routeCount; i++)
+            {
+                TSPSolution solution = new TSPSolution(routes[i]);
+                double currentCost = solution.costOfRoute();
+                if(currentCost < bestCostSoFar)
+                {
+                    bestCostSoFar = currentCost;
+                    BCSFIndex = i;
+                }
+            }
+            return routes[BCSFIndex];
+        }
+
 
         public string[] fancySolveProblem()
         {
