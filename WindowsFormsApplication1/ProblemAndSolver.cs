@@ -502,7 +502,7 @@ namespace TSP
             {
                 newCities[i] = bssf.Route[i] as City;
             }
-            double minChange;
+            double minChange, change;
             do
             {
                 if (timer.ElapsedMilliseconds >= time_limit)
@@ -514,11 +514,19 @@ namespace TSP
                 int kMin = 0;
                 for (int i = 0; i < newCities.Length - 2; i++)
                 {
-                    for (int k = i + 2; k < newCities.Length - 1; k++)
+                    for (int k = i + 2; k < newCities.Length; k++)
                     {
-                        //TODO: wrap
-                        double change = newCities[i].costToGetTo(newCities[k]) + newCities[i + 1].costToGetTo(newCities[k + 1]) -
-                            newCities[i].costToGetTo(newCities[i + 1]) - newCities[k].costToGetTo(newCities[k + 1]);
+                        if (k == newCities.Length - 1)
+                        {
+                            // Check the edge from the last city in the tour to the first
+                            change = newCities[i].costToGetTo(newCities[k]) + newCities[i + 1].costToGetTo(newCities[0]) -
+                                newCities[i].costToGetTo(newCities[i + 1]) - newCities[k].costToGetTo(newCities[0]);
+                        }
+                        else
+                        {
+                            change = newCities[i].costToGetTo(newCities[k]) + newCities[i + 1].costToGetTo(newCities[k + 1]) -
+                                newCities[i].costToGetTo(newCities[i + 1]) - newCities[k].costToGetTo(newCities[k + 1]);
+                        }
                         if (change < minChange)
                         {
                             minChange = change;
