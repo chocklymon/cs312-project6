@@ -505,6 +505,10 @@ namespace TSP
             double minChange;
             do
             {
+                if (timer.ElapsedMilliseconds >= time_limit)
+                {
+                    break;
+                }
                 minChange = 0;
                 int iMin = 0;
                 int kMin = 0;
@@ -512,6 +516,7 @@ namespace TSP
                 {
                     for (int k = i + 2; k < newCities.Length - 1; k++)
                     {
+                        //TODO: wrap
                         double change = newCities[i].costToGetTo(newCities[k]) + newCities[i + 1].costToGetTo(newCities[k + 1]) -
                             newCities[i].costToGetTo(newCities[i + 1]) - newCities[k].costToGetTo(newCities[k + 1]);
                         if (change < minChange)
@@ -543,6 +548,7 @@ namespace TSP
                     solutionCount++;
                     Route = new ArrayList(newRoute);
                     bssf = new TSPSolution(Route);
+                    newCities = newRoute;
                 }
             } while (minChange < 0);
 
