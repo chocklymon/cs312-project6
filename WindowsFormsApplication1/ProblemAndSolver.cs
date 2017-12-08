@@ -491,13 +491,68 @@ namespace TSP
 
         public string[] fancySolveProblem()
         {
+            greedySolveProblem();
             string[] results = new string[3];
+            Stopwatch timer = new Stopwatch();
+            int solutionCount = 0;
+            timer.Start();
 
-            // TODO: Add your implementation for your advanced solver here.
+            City[] newCities = new City[Cities.Length];
+            for (int i = 0; i < Cities.Length; i++)
+            {
+                newCities[i] = bssf.Route[i] as City;
+            }
+            double minChange;
+            do
+            {
+                minChange = 0;
+                int iMin = 0;
+                int kMin = 0;
+                for (int i = 0; i < newCities.Length - 2; i++)
+                {
+                    for (int k = i + 2; k < newCities.Length - 1; k++)
+                    {
+                        double change = newCities[i].costToGetTo(newCities[k]) + newCities[i + 1].costToGetTo(newCities[k + 1]) -
+                            newCities[i].costToGetTo(newCities[i + 1]) - newCities[k].costToGetTo(newCities[k + 1]);
+                        if (change < minChange)
+                        {
+                            minChange = change;
+                            iMin = i;
+                            kMin = k;
+                        }
+                    }
+                }
+                if (minChange < 0)
+                {
+                    // Swap
+                    City[] newRoute = new City[Cities.Length];
+                    for (int i = 0; i <= iMin; i++)
+                    {
+                        newRoute[i] = newCities[i];
+                    }
+                    int k = kMin;
+                    for (int i = iMin + 1; i <= kMin; i++)
+                    {
+                        newRoute[i] = newCities[k];
+                        k--;
+                    }
+                    for (int i = kMin + 1; i < newRoute.Length; i++)
+                    {
+                        newRoute[i] = newCities[i];
+                    }
+                    solutionCount++;
+                    Route = new ArrayList(newRoute);
+                    bssf = new TSPSolution(Route);
+                }
+            } while (minChange < 0);
 
-            results[COST] = "not implemented";    // load results into array here, replacing these dummy values
-            results[TIME] = "-1";
-            results[COUNT] = "-1";
+
+
+            timer.Stop();
+
+            results[COST] = costOfBssf().ToString();
+            results[TIME] = timer.Elapsed.ToString();
+            results[COUNT] = solutionCount.ToString();
 
             return results;
         }
