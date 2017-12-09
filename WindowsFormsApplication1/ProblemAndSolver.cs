@@ -593,18 +593,28 @@ namespace TSP
 
         public string[] fancySolveProblem()
         {
-            greedySolveProblem();
             string[] results = new string[3];
             Stopwatch timer = new Stopwatch();
-            int solutionCount = 0;
+            double minChange,
+                   change;
+            int solutionCount = 0,
+                iMin,// Used to keep track of the location of the ideal edge swap
+                kMin;
+            City temp;
+
             timer.Start();
 
-            City[] newCities = new City[Cities.Length];
+            // Find an initial bssf greedily
+            greedySolveProblem();
+
+            // Create a route array from the bssf
+            City[] route = new City[Cities.Length];
             for (int i = 0; i < Cities.Length; i++)
             {
-                newCities[i] = bssf.Route[i] as City;
+                route[i] = bssf.Route[i] as City;
             }
-            double minChange, change;
+
+            // Repeat the search until no better solutions are found
             do
             {
                 if (timer.ElapsedMilliseconds >= time_limit)
@@ -612,22 +622,22 @@ namespace TSP
                     break;
                 }
                 minChange = 0;
-                int iMin = 0;
-                int kMin = 0;
-                for (int i = 0; i < newCities.Length - 2; i++)
+                iMin = 0;
+                kMin = 0;
+                for (int i = 0; i < route.Length - 2; i++)
                 {
-                    for (int k = i + 2; k < newCities.Length; k++)
+                    for (int k = i + 2; k < route.Length; k++)
                     {
-                        if (k == newCities.Length - 1)
+                        if (k == route.Length - 1)
                         {
                             // Check the edge from the last city in the tour to the first
-                            change = newCities[i].costToGetTo(newCities[k]) + newCities[i + 1].costToGetTo(newCities[0]) -
-                                newCities[i].costToGetTo(newCities[i + 1]) - newCities[k].costToGetTo(newCities[0]);
+                            change = route[i].costToGetTo(route[k]) + route[i + 1].costToGetTo(route[0]) -
+                                route[i].costToGetTo(route[i + 1]) - route[k].costToGetTo(route[0]);
                         }
                         else
                         {
-                            change = newCities[i].costToGetTo(newCities[k]) + newCities[i + 1].costToGetTo(newCities[k + 1]) -
-                                newCities[i].costToGetTo(newCities[i + 1]) - newCities[k].costToGetTo(newCities[k + 1]);
+                            change = route[i].costToGetTo(route[k]) + route[i + 1].costToGetTo(route[k + 1]) -
+                                route[i].costToGetTo(route[i + 1]) - route[k].costToGetTo(route[k + 1]);
                         }
                         if (change < minChange)
                         {
@@ -640,25 +650,17 @@ namespace TSP
                 if (minChange < 0)
                 {
                     // Swap
-                    City[] newRoute = new City[Cities.Length];
-                    for (int i = 0; i <= iMin; i++)
-                    {
-                        newRoute[i] = newCities[i];
-                    }
                     int k = kMin;
-                    for (int i = iMin + 1; i <= kMin; i++)
+                    for (int i = iMin + 1; i < k; i++)
                     {
-                        newRoute[i] = newCities[k];
+                        temp = route[i];
+                        route[i] = route[k];
+                        route[k] = temp;
                         k--;
                     }
-                    for (int i = kMin + 1; i < newRoute.Length; i++)
-                    {
-                        newRoute[i] = newCities[i];
-                    }
                     solutionCount++;
-                    Route = new ArrayList(newRoute);
+                    Route = new ArrayList(route);
                     bssf = new TSPSolution(Route);
-                    newCities = newRoute;
                 }
             } while (minChange < 0);
 
