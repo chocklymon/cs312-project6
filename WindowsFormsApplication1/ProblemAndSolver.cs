@@ -377,8 +377,8 @@ namespace TSP
             timer.Start();
 
             // Run the greedy solver to get a baseline best solution so far
-            GreedySolver gs = new GreedySolver(Cities);
-            bssf = gs.Solution();
+            greedySolveProblem();
+            bssf.Bound = bssf.costOfRoute();
 
             // Run branch and bound to find the optimal solution (if we can)
             // Create the start state and add the queue
@@ -477,7 +477,7 @@ namespace TSP
             Stopwatch timer = new Stopwatch();
             timer.Start();
             //Obtain a BSSF by using a GREEDY approach.
-            List<ArrayList> routes = GenerateGreddyRoutes();
+            List<ArrayList> routes = GenerateGreedyRoutes();
             bssf = new TSPSolution(BestRoute(routes));
 
             timer.Stop();
@@ -488,7 +488,7 @@ namespace TSP
             return results;
         }
 
-        public List<ArrayList> GenerateGreddyRoutes()
+        public List<ArrayList> GenerateGreedyRoutes()
         {
             List<ArrayList> routes = new List<ArrayList>();
             int cityCount = Cities.Length;
@@ -673,172 +673,6 @@ namespace TSP
             return results;
         }
         #endregion
-
-        /**
-         * GreedSolver class.
-         * Takes O(n^2) space.
-         */
-        private class GreedySolver
-        {
-            const int NO_NODE = -1;
-
-            private ArrayList route;
-            private City[] cities;
-            private TSPSolution bssf;
-
-            private bool solutionFound = false;
-            private bool[] visited;
-            private int size;
-            private int backtrackingCount = 0;
-            private int[] backtrackingSize;
-            private int[][] backtracking;
-
-            /**
-             * Create a new greedy solver.
-             * Runs in O(n) and takes O(n^2) space.
-             */
-            public GreedySolver(City[] cities)
-            {
-                this.cities = cities;
-                size = cities.Length;
-                route = new ArrayList(size);
-                visited = new bool[size];
-
-                // Initialize the structures used for backtracking
-                // O(n)
-                backtrackingSize = new int[size];
-                backtracking = new int[size][];
-                for (int i = 0; i < size; i++)
-                {
-                    backtracking[i] = new int[size];
-                }
-            }
-
-            /**
-             * Find a solution using a greedy algorithm.
-             * This works by doing a depth first search taking the least expensive edge out of every city
-             * until a valid solution is found.
-             * Runs in O(n^2)
-             */
-            public TSPSolution Solution()
-            {
-                for (int i = 0; i < size; i++) // O(n)
-                {
-                    // Try to find a solution starting from this node
-                    GreedyExplore(i);
-
-                    if (solutionFound)
-                    {
-                        // Found a solution, stop exploring
-                        break;
-                    }
-                    else
-                    {
-                        // No solution found by starting at this node, reset backtracking
-                        for (int j = 0; j < size; j++) // O(n)
-                        {
-                            backtrackingSize[j] = 0;
-                        }
-                    }
-                }
-
-                return bssf;
-            }
-
-            public int BacktrackCount()
-            {
-                return backtrackingCount;
-            }
-
-            /**
-             * Greedily explores the child nodes of the given node.
-             * Runs in O(n^2)
-             */
-            private void GreedyExplore(int nodeIndex)
-            {
-                // Explore this node //
-                double min,
-                       cost;
-                int minIndex;
-
-                // Mark this node as visited
-                visited[nodeIndex] = true;
-                route.Add(cities[nodeIndex]);
-
-                // Check if we have a solution
-                if (route.Count == size)
-                {
-                    bssf = new TSPSolution(route);
-                    bssf.Bound = bssf.costOfRoute();
-                    if (bssf.Bound != double.PositiveInfinity)
-                    {
-                        // Found a solution
-                        solutionFound = true;
-                        return;
-                    }
-                    // Route is not a solution, we will need to backtrack
-                    backtrackingCount++;
-                }
-
-                do
-                {
-                    // Find the smallest route out of this node
-                    minIndex = NO_NODE;
-                    min = double.PositiveInfinity;
-
-                    for (int i = 0; i < size; i++) // O(n)
-                    {
-                        // Make sure that the node i is valid
-                        // To be valid it can't be the same node that is being explored, it can't already be in the route (visited), and
-                        // we need to have not already tried checking this node (backtracking).
-                        if (i != nodeIndex && !visited[i] && !AlreadyChecked(nodeIndex, i))// O(n)
-                        {
-                            cost = cities[i].costToGetTo(cities[nodeIndex]);
-                            if (cost != double.PositiveInfinity && cost < min)
-                            {
-                                min = cost;
-                                minIndex = i;
-                            }
-                        }
-                    }
-                    if (minIndex != NO_NODE)
-                    {
-                        // Mark that we took this search path for this node
-                        backtracking[nodeIndex][backtrackingSize[nodeIndex]] = minIndex;
-                        backtrackingSize[nodeIndex]++;
-
-                        // Explore our child node
-                        GreedyExplore(minIndex);
-                    }
-                    // Repeat until a solution is found or there are no more children. Repeats 0 to n times.
-                } while (minIndex != NO_NODE && !solutionFound);
-
-                if (!solutionFound)
-                {
-                    // If we've gotten to this point without finding a solution that means we have explored every valid route out of this node
-                    // and none of them resulted in a valid tour, so we will need to do some backtracking and try a different path.
-                    // Clear this node to be visited again
-                    route.RemoveAt(route.Count - 1);
-                    visited[nodeIndex] = false;
-                }
-            }
-
-            /**
-             * Indicates if the node has already been checked for a solution.
-             * Runs in O(n) time at worst.
-             */
-            private bool AlreadyChecked(int nodeIndex, int i)
-            {
-                for (int j = 0; j < backtrackingSize[nodeIndex]; j++)
-                {
-                    if (backtracking[nodeIndex][j] == i)
-                    {
-                        return true;
-                    }
-                }
-                return false;
-            }
-        }
 
         /**
          * Holds a search state in the branch and bound algorithm.
